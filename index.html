@@ -3,126 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>So'rov Ko'rsatuvchi</title>
+  <title>Jonli So'rov Ko'rsatuvchi</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #0f0f1a;
-      color: #00ffcc;
+      background: #0a0a14;
+      color: #00ffaa;
       margin: 0;
       padding: 20px;
-      min-height: 100vh;
     }
     .container {
-      max-width: 900px;
-      margin: 40px auto;
+      max-width: 1000px;
+      margin: 30px auto;
       background: #1a1a2e;
       border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 10px 30px rgba(0, 255, 200, 0.1);
+      padding: 25px;
+      box-shadow: 0 0 25px rgba(0, 255, 170, 0.15);
     }
     h1 {
       text-align: center;
       color: #00ffcc;
-      margin-bottom: 30px;
+    }
+    .status {
+      text-align: center;
+      font-size: 14px;
+      margin: 10px 0;
+      color: #00cc88;
     }
     .info {
       background: #16213e;
-      padding: 15px;
+      padding: 14px;
       border-radius: 8px;
-      margin-bottom: 20px;
+      margin: 15px 0;
       word-break: break-all;
-    }
-    .section {
-      margin-bottom: 30px;
-    }
-    h2 {
-      color: #00ccaa;
-      border-bottom: 2px solid #00ffcc;
-      padding-bottom: 8px;
     }
     pre {
       background: #0d0d1a;
-      padding: 15px;
+      padding: 16px;
       border-radius: 8px;
       overflow-x: auto;
       font-size: 15px;
-      line-height: 1.5;
     }
-    .empty {
-      text-align: center;
-      color: #777;
-      font-style: italic;
-      margin: 50px 0;
+    .new { animation: highlight 1.5s ease; }
+    @keyframes highlight {
+      0% { background: #00ffaa33; }
+      100% { background: transparent; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔍 Kelgan So'rov</h1>
+    <h1>🔴 Jonli So'rov Monitor</h1>
+    <div class="status" id="status">Monitoring faol • Har 800ms tekshirilmoqda</div>
 
     <div class="section">
       <h2>Full URL</h2>
-      <div class="info" id="fullUrl"></div>
+      <div class="info" id="fullUrl">—</div>
     </div>
 
     <div class="section">
       <h2>Query Parameters</h2>
-      <pre id="queryParams">Yuklanmoqda...</pre>
+      <pre id="queryParams">—</pre>
     </div>
 
     <div class="section">
-      <h2>Hash (Fragment)</h2>
-      <div class="info" id="hash"></div>
+      <h2>Barcha ma'lumotlar</h2>
+      <pre id="allData">—</pre>
     </div>
-
-    <div class="section">
-      <h2>Barcha ma'lumotlar (JSON)</h2>
-      <pre id="allData"></pre>
-    </div>
-
-    <div id="empty" class="empty">Hozircha hech qanday parametr yo'q</div>
   </div>
 
   <script>
+    let lastSearch = window.location.search;
+
     function updateDisplay() {
       const url = new URL(window.location.href);
-      
+      const currentSearch = url.search;
+
+      // Yangi parametrlar keldimi?
+      if (currentSearch !== lastSearch) {
+        document.querySelectorAll('.info, pre').forEach(el => {
+          el.classList.add('new');
+          setTimeout(() => el.classList.remove('new'), 1500);
+        });
+        lastSearch = currentSearch;
+      }
+
       // Full URL
       document.getElementById('fullUrl').textContent = window.location.href;
 
-      // Query Parameters
+      // Query params
       const params = Object.fromEntries(url.searchParams);
       document.getElementById('queryParams').textContent = 
-        Object.keys(params).length > 0 
+        Object.keys(params).length 
           ? JSON.stringify(params, null, 2) 
-          : "Query parametrlar topilmadi";
+          : "Query parametrlar yo'q";
 
-      // Hash
-      const hash = url.hash ? url.hash.substring(1) : "Hash mavjud emas";
-      document.getElementById('hash').textContent = hash;
-
-      // All Data
+      // All data
       const allData = {
         fullUrl: window.location.href,
-        protocol: url.protocol,
-        hostname: url.hostname,
         pathname: url.pathname,
         search: url.search,
         hash: url.hash,
-        params: params
+        params: params,
+        timestamp: new Date().toLocaleTimeString('uz-UZ')
       };
       
       document.getElementById('allData').textContent = JSON.stringify(allData, null, 2);
-
-      // Empty message
-      document.getElementById('empty').style.display = 
-        Object.keys(params).length === 0 && !url.hash ? 'block' : 'none';
     }
 
-    // Sahifa yuklanganda va URL o'zgarganda ishlaydi
+    // Har 800ms da tekshirish
+    setInterval(updateDisplay, 800);
+
+    // Birinchi yuklashda ham ishlatish
     window.addEventListener('load', updateDisplay);
-    window.addEventListener('popstate', updateDisplay);
   </script>
 </body>
 </html>
