@@ -3,53 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOST Header Injection Test Page</title>
+    <title>HOST Header Injection Lab - userr404.github.io</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #00ff00; padding: 20px; }
-        h1 { color: #00ff41; }
-        input, button { padding: 10px; margin: 8px 0; width: 100%; max-width: 600px; }
-        button { background: #0066ff; color: white; border: none; cursor: pointer; }
-        #result { margin-top: 20px; background: #222; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-family: monospace; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #0f0f0f; 
+            color: #00ff00; 
+            padding: 20px; 
+            line-height: 1.6;
+        }
+        h1 { color: #ff4444; }
+        .box { 
+            background: #1f1f1f; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 15px 0;
+            border: 1px solid #333;
+        }
+        pre { 
+            background: #000; 
+            padding: 15px; 
+            border-radius: 5px; 
+            overflow-x: auto;
+        }
     </style>
 </head>
 <body>
-    <h1>🔴 HOST Header Injection Test (userr404.github.io)</h1>
-    <p>Bu sahifa login sahifasini taqlid qiladi. POST orqali test qiling.</p>
+    <h1>🔴 HOST Header Injection Test Lab</h1>
+    <p><strong>Target:</strong> https://userr404.github.io</p>
 
-    <form id="loginForm">
-        <input type="text" name="username" placeholder="Username" required><br>
-        <input type="password" name="password" placeholder="Password" required><br>
-        <button type="submit">Login (POST)</button>
-    </form>
+    <div class="box">
+        <h2>Login Form (Test uchun)</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" required><br><br>
+            <input type="password" id="password" placeholder="Password" required><br><br>
+            <button type="submit">Login</button>
+        </form>
+    </div>
 
-    <div id="result"></div>
+    <div class="box">
+        <h2>📥 Qabul Qilingan POST Ma'lumotlar</h2>
+        <div id="result">Hozircha hech qanday POST kelmadi...</div>
+    </div>
 
     <script>
-        const form = document.getElementById('loginForm');
-        const result = document.getElementById('result');
-
-        form.addEventListener('submit', async function(e) {
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-            const payload = {
+            const data = {
                 timestamp: new Date().toISOString(),
                 host: window.location.hostname,
-                ip: "Client IP (visible only on server)",
+                path: window.location.pathname,
+                username: username,
+                password: password,
                 user_agent: navigator.userAgent,
-                data: data,
-                note: "Agar HOST Header Injection ishlasa, bu ma'lumotlar boshqa host bilan kelishi mumkin"
+                method: "POST",
+                note: "GitHub Pages static bo'lgani uchun faqat client-side ko'rsatilyapti"
             };
 
-            result.innerHTML = `<strong>✅ POST Qabul Qilindi!</strong><br><br>` +
-                               `<strong>Received Host:</strong> ${window.location.hostname}<br>` +
-                               `<strong>Time:</strong> ${new Date().toLocaleString('uz-UZ')}<br><br>` +
-                               `<strong>POST Data:</strong><br>` +
-                               `<pre>${JSON.stringify(payload, null, 2)}</pre>`;
+            document.getElementById('result').innerHTML = `
+                <strong>✅ POST Qabul Qilindi!</strong><br><br>
+                <strong>Vaqt:</strong> ${new Date().toLocaleString('uz-UZ')}<br>
+                <strong>Host:</strong> ${data.host}<br><br>
+                <strong>POST Data:</strong><br>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
 
-            console.log("HOST Header Test Data:", payload);
+            console.log("HOST Injection Test:", data);
         });
     </script>
 </body>
