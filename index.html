@@ -3,61 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Request Monitor</title>
+  <title>GitHub Request Monitor</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #0f0f1a; color: #0f0; margin: 0; padding: 10px; }
-    h1 { text-align: center; color: #00ff88; }
-    .container { max-width: 1200px; margin: auto; }
-    .request { 
-      background: #1a1a2e; 
-      margin: 10px 0; 
-      padding: 15px; 
+    body {
+      font-family: Arial, sans-serif;
+      background: #0a0a14;
+      color: #00ffaa;
+      margin: 0;
+      padding: 15px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: #1a1a2e;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    h1 { text-align: center; color: #00ffcc; }
+    .status { text-align: center; color: #00cc88; margin: 10px 0; }
+    .request {
+      background: #16213e;
+      margin: 12px 0;
+      padding: 15px;
       border-radius: 8px;
       border-left: 5px solid #00ff88;
     }
-    .header { display: flex; justify-content: space-between; font-weight: bold; }
-    pre { background: #111; padding: 10px; border-radius: 6px; overflow-x: auto; }
-    .new { animation: flash 2s; }
-    @keyframes flash { 0% { background: #00ff8833; } 100% { background: #1a1a2e; } }
+    .time { color: #888; font-size: 14px; }
+    pre {
+      background: #0d0d1a;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+    .new { animation: flash 2s ease; }
+    @keyframes flash { 0% { background: #00ff8833; } }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔴 Live Request Monitor</h1>
-    <p style="text-align:center; color:#0f0;">Server: http://localhost:3000</p>
+    <h1>🔴 GitHub Pages Request Monitor</h1>
+    <div class="status" id="status">Monitoring faol</div>
+
     <div id="requests"></div>
   </div>
 
   <script>
-    const ws = new WebSocket('ws://localhost:3000');
     const requestsDiv = document.getElementById('requests');
+    let requests = JSON.parse(localStorage.getItem('allRequests')) || [];
 
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      
-      if (msg.type === 'history') {
-        requestsDiv.innerHTML = '';
-        msg.data.forEach(req => addRequest(req));
-      } 
-      else if (msg.type === 'new_request') {
-        addRequest(msg.data, true);
-      }
-    };
+    function saveRequests() {
+      localStorage.setItem('allRequests', JSON.stringify(requests));
+    }
 
     function addRequest(req, isNew = false) {
       const div = document.createElement('div');
       div.className = `request ${isNew ? 'new' : ''}`;
       div.innerHTML = `
-        <div class="header">
-          <span>${req.timestamp} — <strong>${req.method}</strong></span>
-          <span style="color:#0ff;">${req.ip}</span>
-        </div>
-        <h3>${req.fullUrl}</h3>
+        <div class="time">${req.timestamp}</div>
+        <strong>${req.method} ${req.url}</strong>
         <pre>Query: ${JSON.stringify(req.query, null, 2)}</pre>
-        <pre>Headers: ${JSON.stringify(req.headers, null, 2)}</pre>
+        <pre>Full URL: ${req.fullUrl}</pre>
       `;
       requestsDiv.prepend(div);
     }
+
+    function updateFromURL() {
+      const url = new URL(window.location.href);
+      if (url.search || url.hash) {
+        const newRequest = {
+          id: Date.now(),
+          timestamp: new Date().toLocaleTimeString('uz-UZ'),
+          method: "GET",
+          url: url.pathname + url.search,
+          fullUrl: url.href,
+          query: Object.fromEntries(url.searchParams),
+        };
+
+        // Agar oxirgi request bilan bir xil bo'lmasa qo'shish
+        if (requests.length === 0 || requests[0].fullUrl !== newRequest.fullUrl) {
+          requests.unshift(newRequest);
+          if (requests.length > 50) requests.pop();
+          saveRequests();
+          addRequest(newRequest, true);
+        }
+      }
+    }
+
+    // Boshlang'ich yuklash
+    function loadAllRequests() {
+      requestsDiv.innerHTML = '';
+      requests.forEach(req => addRequest(req));
+    }
+
+    // Har 700ms da URL ni tekshirish
+    setInterval(updateFromURL, 700);
+
+    // Sahifa yangilanganda ham
+    window.addEventListener('load', () => {
+      loadAllRequests();
+      updateFromURL();
+    });
+
+    // Boshqa tabda o'zgarganda sinxronizatsiya
+    window.addEventListener('storage', () => {
+      requests = JSON.parse(localStorage.getItem('allRequests')) || [];
+      loadAllRequests();
+    });
   </script>
 </body>
 </html>
