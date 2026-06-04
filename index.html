@@ -3,119 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jonli So'rov Ko'rsatuvchi</title>
+  <title>Request Monitor</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0a0a14;
-      color: #00ffaa;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 30px auto;
-      background: #1a1a2e;
-      border-radius: 12px;
-      padding: 25px;
-      box-shadow: 0 0 25px rgba(0, 255, 170, 0.15);
-    }
-    h1 {
-      text-align: center;
-      color: #00ffcc;
-    }
-    .status {
-      text-align: center;
-      font-size: 14px;
-      margin: 10px 0;
-      color: #00cc88;
-    }
-    .info {
-      background: #16213e;
-      padding: 14px;
+    body { font-family: Arial, sans-serif; background: #0f0f1a; color: #0f0; margin: 0; padding: 10px; }
+    h1 { text-align: center; color: #00ff88; }
+    .container { max-width: 1200px; margin: auto; }
+    .request { 
+      background: #1a1a2e; 
+      margin: 10px 0; 
+      padding: 15px; 
       border-radius: 8px;
-      margin: 15px 0;
-      word-break: break-all;
+      border-left: 5px solid #00ff88;
     }
-    pre {
-      background: #0d0d1a;
-      padding: 16px;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-size: 15px;
-    }
-    .new { animation: highlight 1.5s ease; }
-    @keyframes highlight {
-      0% { background: #00ffaa33; }
-      100% { background: transparent; }
-    }
+    .header { display: flex; justify-content: space-between; font-weight: bold; }
+    pre { background: #111; padding: 10px; border-radius: 6px; overflow-x: auto; }
+    .new { animation: flash 2s; }
+    @keyframes flash { 0% { background: #00ff8833; } 100% { background: #1a1a2e; } }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔴 Jonli So'rov Monitor</h1>
-    <div class="status" id="status">Monitoring faol • Har 800ms tekshirilmoqda</div>
-
-    <div class="section">
-      <h2>Full URL</h2>
-      <div class="info" id="fullUrl">—</div>
-    </div>
-
-    <div class="section">
-      <h2>Query Parameters</h2>
-      <pre id="queryParams">—</pre>
-    </div>
-
-    <div class="section">
-      <h2>Barcha ma'lumotlar</h2>
-      <pre id="allData">—</pre>
-    </div>
+    <h1>🔴 Live Request Monitor</h1>
+    <p style="text-align:center; color:#0f0;">Server: http://localhost:3000</p>
+    <div id="requests"></div>
   </div>
 
   <script>
-    let lastSearch = window.location.search;
+    const ws = new WebSocket('ws://localhost:3000');
+    const requestsDiv = document.getElementById('requests');
 
-    function updateDisplay() {
-      const url = new URL(window.location.href);
-      const currentSearch = url.search;
-
-      // Yangi parametrlar keldimi?
-      if (currentSearch !== lastSearch) {
-        document.querySelectorAll('.info, pre').forEach(el => {
-          el.classList.add('new');
-          setTimeout(() => el.classList.remove('new'), 1500);
-        });
-        lastSearch = currentSearch;
-      }
-
-      // Full URL
-      document.getElementById('fullUrl').textContent = window.location.href;
-
-      // Query params
-      const params = Object.fromEntries(url.searchParams);
-      document.getElementById('queryParams').textContent = 
-        Object.keys(params).length 
-          ? JSON.stringify(params, null, 2) 
-          : "Query parametrlar yo'q";
-
-      // All data
-      const allData = {
-        fullUrl: window.location.href,
-        pathname: url.pathname,
-        search: url.search,
-        hash: url.hash,
-        params: params,
-        timestamp: new Date().toLocaleTimeString('uz-UZ')
-      };
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
       
-      document.getElementById('allData').textContent = JSON.stringify(allData, null, 2);
+      if (msg.type === 'history') {
+        requestsDiv.innerHTML = '';
+        msg.data.forEach(req => addRequest(req));
+      } 
+      else if (msg.type === 'new_request') {
+        addRequest(msg.data, true);
+      }
+    };
+
+    function addRequest(req, isNew = false) {
+      const div = document.createElement('div');
+      div.className = `request ${isNew ? 'new' : ''}`;
+      div.innerHTML = `
+        <div class="header">
+          <span>${req.timestamp} — <strong>${req.method}</strong></span>
+          <span style="color:#0ff;">${req.ip}</span>
+        </div>
+        <h3>${req.fullUrl}</h3>
+        <pre>Query: ${JSON.stringify(req.query, null, 2)}</pre>
+        <pre>Headers: ${JSON.stringify(req.headers, null, 2)}</pre>
+      `;
+      requestsDiv.prepend(div);
     }
-
-    // Har 800ms da tekshirish
-    setInterval(updateDisplay, 800);
-
-    // Birinchi yuklashda ham ishlatish
-    window.addEventListener('load', updateDisplay);
   </script>
 </body>
 </html>
