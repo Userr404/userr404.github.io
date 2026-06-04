@@ -3,60 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bug Bounty Test Page</title>
+    <title>HOST Header Injection Test Page</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
-        h1 { color: #333; }
-        form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        #result { margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 6px; white-space: pre-wrap; }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #00ff00; padding: 20px; }
+        h1 { color: #00ff41; }
+        input, button { padding: 10px; margin: 8px 0; width: 100%; max-width: 600px; }
+        button { background: #0066ff; color: white; border: none; cursor: pointer; }
+        #result { margin-top: 20px; background: #222; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-family: monospace; }
     </style>
 </head>
 <body>
-    <h1>POST Request Test Sahifasi (Bug Bounty)</h1>
-    
-    <form id="postForm">
-        <label><strong>Ism:</strong></label>
-        <input type="text" name="name" placeholder="Ismingiz" required>
+    <h1>🔴 HOST Header Injection Test (userr404.github.io)</h1>
+    <p>Bu sahifa login sahifasini taqlid qiladi. POST orqali test qiling.</p>
 
-        <label><strong>Email:</strong></label>
-        <input type="email" name="email" placeholder="email@example.com" required>
-
-        <label><strong>Xabar:</strong></label>
-        <textarea name="message" rows="5" placeholder="Xabaringiz..." required></textarea>
-
-        <button type="submit">POST Request Yuborish</button>
+    <form id="loginForm">
+        <input type="text" name="username" placeholder="Username" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button type="submit">Login (POST)</button>
     </form>
 
     <div id="result"></div>
 
     <script>
-        const form = document.getElementById('postForm');
+        const form = document.getElementById('loginForm');
         const result = document.getElementById('result');
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault(); // Oddiy submitni to'xtatamiz
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
 
             const formData = new FormData(form);
-            const data = {};
+            const data = Object.fromEntries(formData.entries());
 
-            // Form ma'lumotlarini objectga aylantiramiz
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
-            }
+            const payload = {
+                timestamp: new Date().toISOString(),
+                host: window.location.hostname,
+                ip: "Client IP (visible only on server)",
+                user_agent: navigator.userAgent,
+                data: data,
+                note: "Agar HOST Header Injection ishlasa, bu ma'lumotlar boshqa host bilan kelishi mumkin"
+            };
 
-            // Natijani ekranda ko'rsatamiz
-            result.innerHTML = `
-                <strong>✅ POST Request Qabul Qilindi!</strong><br><br>
-                <strong>Vaqt:</strong> ${new Date().toLocaleString('uz-UZ')}<br><br>
-                <strong>JSON Formatda:</strong><br>
-                <pre>${JSON.stringify(data, null, 2)}</pre>
-            `;
+            result.innerHTML = `<strong>✅ POST Qabul Qilindi!</strong><br><br>` +
+                               `<strong>Received Host:</strong> ${window.location.hostname}<br>` +
+                               `<strong>Time:</strong> ${new Date().toLocaleString('uz-UZ')}<br><br>` +
+                               `<strong>POST Data:</strong><br>` +
+                               `<pre>${JSON.stringify(payload, null, 2)}</pre>`;
 
-            // Konsolga ham chiqarish (bug bounty uchun qulay)
-            console.log("POST Data:", data);
+            console.log("HOST Header Test Data:", payload);
         });
     </script>
 </body>
