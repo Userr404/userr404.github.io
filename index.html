@@ -1,79 +1,128 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOST Header Injection Lab - userr404.github.io</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background: #0f0f0f; 
-            color: #00ff00; 
-            padding: 20px; 
-            line-height: 1.6;
-        }
-        h1 { color: #ff4444; }
-        .box { 
-            background: #1f1f1f; 
-            padding: 20px; 
-            border-radius: 8px; 
-            margin: 15px 0;
-            border: 1px solid #333;
-        }
-        pre { 
-            background: #000; 
-            padding: 15px; 
-            border-radius: 5px; 
-            overflow-x: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>So'rov Ko'rsatuvchi</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #00ffcc;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 255, 200, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #00ffcc;
+      margin-bottom: 30px;
+    }
+    .info {
+      background: #16213e;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      word-break: break-all;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #00ccaa;
+      border-bottom: 2px solid #00ffcc;
+      padding-bottom: 8px;
+    }
+    pre {
+      background: #0d0d1a;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .empty {
+      text-align: center;
+      color: #777;
+      font-style: italic;
+      margin: 50px 0;
+    }
+  </style>
 </head>
 <body>
-    <h1>🔴 HOST Header Injection Test Lab</h1>
-    <p><strong>Target:</strong> https://userr404.github.io</p>
+  <div class="container">
+    <h1>🔍 Kelgan So'rov</h1>
 
-    <div class="box">
-        <h2>Login Form (Test uchun)</h2>
-        <form id="loginForm">
-            <input type="text" id="username" placeholder="Username" required><br><br>
-            <input type="password" id="password" placeholder="Password" required><br><br>
-            <button type="submit">Login</button>
-        </form>
+    <div class="section">
+      <h2>Full URL</h2>
+      <div class="info" id="fullUrl"></div>
     </div>
 
-    <div class="box">
-        <h2>📥 Qabul Qilingan POST Ma'lumotlar</h2>
-        <div id="result">Hozircha hech qanday POST kelmadi...</div>
+    <div class="section">
+      <h2>Query Parameters</h2>
+      <pre id="queryParams">Yuklanmoqda...</pre>
     </div>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+    <div class="section">
+      <h2>Hash (Fragment)</h2>
+      <div class="info" id="hash"></div>
+    </div>
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+    <div class="section">
+      <h2>Barcha ma'lumotlar (JSON)</h2>
+      <pre id="allData"></pre>
+    </div>
 
-            const data = {
-                timestamp: new Date().toISOString(),
-                host: window.location.hostname,
-                path: window.location.pathname,
-                username: username,
-                password: password,
-                user_agent: navigator.userAgent,
-                method: "POST",
-                note: "GitHub Pages static bo'lgani uchun faqat client-side ko'rsatilyapti"
-            };
+    <div id="empty" class="empty">Hozircha hech qanday parametr yo'q</div>
+  </div>
 
-            document.getElementById('result').innerHTML = `
-                <strong>✅ POST Qabul Qilindi!</strong><br><br>
-                <strong>Vaqt:</strong> ${new Date().toLocaleString('uz-UZ')}<br>
-                <strong>Host:</strong> ${data.host}<br><br>
-                <strong>POST Data:</strong><br>
-                <pre>${JSON.stringify(data, null, 2)}</pre>
-            `;
+  <script>
+    function updateDisplay() {
+      const url = new URL(window.location.href);
+      
+      // Full URL
+      document.getElementById('fullUrl').textContent = window.location.href;
 
-            console.log("HOST Injection Test:", data);
-        });
-    </script>
+      // Query Parameters
+      const params = Object.fromEntries(url.searchParams);
+      document.getElementById('queryParams').textContent = 
+        Object.keys(params).length > 0 
+          ? JSON.stringify(params, null, 2) 
+          : "Query parametrlar topilmadi";
+
+      // Hash
+      const hash = url.hash ? url.hash.substring(1) : "Hash mavjud emas";
+      document.getElementById('hash').textContent = hash;
+
+      // All Data
+      const allData = {
+        fullUrl: window.location.href,
+        protocol: url.protocol,
+        hostname: url.hostname,
+        pathname: url.pathname,
+        search: url.search,
+        hash: url.hash,
+        params: params
+      };
+      
+      document.getElementById('allData').textContent = JSON.stringify(allData, null, 2);
+
+      // Empty message
+      document.getElementById('empty').style.display = 
+        Object.keys(params).length === 0 && !url.hash ? 'block' : 'none';
+    }
+
+    // Sahifa yuklanganda va URL o'zgarganda ishlaydi
+    window.addEventListener('load', updateDisplay);
+    window.addEventListener('popstate', updateDisplay);
+  </script>
 </body>
 </html>
